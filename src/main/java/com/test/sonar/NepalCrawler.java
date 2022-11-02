@@ -73,7 +73,7 @@ public class NepalCrawler {
     }
     private  JSONObject prepareJSONNepaldata1() throws Exception {
         JSONObject object = null;
-        if(getJSONDataForProvince().getString("myObject").equals("myObject")){
+        if(getJSONDataForProvince().getString("myObject").length() >0){
             object = getJSONDataForProvince();
         }
         NepalInformation nepalInformation = new NepalInformation();
@@ -123,6 +123,16 @@ return new JSONObject(province);
         return y.toUpperCase();
     }
 
+    public String getIntegerall(int x) {
+        String y = null;
+        if (x > 0) {
+            y = "more";
+        }
+        else if (x < 0) {
+            y = "less";
+        }
+        return y.toUpperCase();
+    }
 
 
 
