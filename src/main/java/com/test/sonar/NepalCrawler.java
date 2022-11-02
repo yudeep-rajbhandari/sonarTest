@@ -47,15 +47,7 @@ public class NepalCrawler {
 
 
     private  JSONObject prepareJSONNepaldata() throws SSLException, JsonProcessingException {
-        WebClient client = clientConfig.NepalWebclient();
-        WebClient.RequestBodySpec uri1 = client
-                .method(HttpMethod.GET)
-                .uri("/stats/?format=json");
-        String response2 = uri1.exchange()
-                .block()
-                .bodyToMono(String.class)
-                .block();
-        JSONObject object = new JSONObject(response2);
+        JSONObject object = null;
         NepalInformation nepalInformation = new NepalInformation();
         nepalInformation.setTotal_Samples_Tested(object.getInt("tested"));
         nepalInformation.setIsolation(object.getInt("isolation"));
@@ -66,17 +58,10 @@ public class NepalCrawler {
         String json = mapper.writeValueAsString(nepalInformation);
 
         return new JSONObject(json);
+
     }
     private  JSONObject prepareJSONNepaldata1() throws SSLException, JsonProcessingException {
-        WebClient client = clientConfig.NepalWebclient();
-        WebClient.RequestBodySpec uri1 = client
-                .method(HttpMethod.GET)
-                .uri("/stats/?format=json");
-        String response2 = uri1.exchange()
-                .block()
-                .bodyToMono(String.class)
-                .block();
-        JSONObject object = new JSONObject(response2);
+        JSONObject object = null;
         NepalInformation nepalInformation = new NepalInformation();
         nepalInformation.setTotal_Samples_Tested(object.getInt("tested"));
         nepalInformation.setIsolation(object.getInt("isolation"));
@@ -87,103 +72,15 @@ public class NepalCrawler {
         String json = mapper.writeValueAsString(nepalInformation);
 
         return new JSONObject(json);
-    }
-    private  JSONObject prepareJSONNepaldata3() throws SSLException, JsonProcessingException {
-        WebClient client = clientConfig.NepalWebclient();
-        WebClient.RequestBodySpec uri1 = client
-                .method(HttpMethod.GET)
-                .uri("/stats/?format=json");
-        String response2 = uri1.exchange()
-                .block()
-                .bodyToMono(String.class)
-                .block();
-        JSONObject object = new JSONObject(response2);
-        NepalInformation nepalInformation = new NepalInformation();
-        nepalInformation.setTotal_Samples_Tested(object.getInt("tested"));
-        nepalInformation.setIsolation(object.getInt("isolation"));
-        nepalInformation.setNegative(object.getInt("tested") -object.getInt("confirmed") );
-        nepalInformation.setRecovered(object.getInt("confirmed")-object.getInt("isolation"));
-        nepalInformation.setPositive(object.getInt("confirmed"));
-        ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(nepalInformation);
-
-        return new JSONObject(json);
-    }
-
-
-    public JSONObject getfromAPI() throws SSLException, JsonProcessingException {
-
-        return  prepareJSONNepaldata();
-    }
-    @Scheduled(fixedRate = 21600000)
-    public void storefromAPI() throws Exception {
-     JSONObject object = prepareJSONNepaldata();
-        String documentId = mObject.saveMongoDocument(object,NEPAL_DATA);
-        LOGGER.info("Data stored in mongo with documentId {}",documentId);
 
     }
 
 
-    @Scheduled(fixedRate = 4000)
-    public JSONObject call() throws Exception {
-        int ii = 0;
-        while (doc1 == null) {
-            try {
-                ii++;
-//                doc1 = SSLHelper.getConnection("https://heoc.mohp.gov.np/").timeout(0).userAgent(USER_AGENT).get();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        Element row = doc1.selectFirst("div.emergency-box");
-        JSONObject object = new JSONObject();
-
-        ArrayList<String> str= new ArrayList<>();
-        String[] value1 = row.select("li").get(0).text().split(" ",2);
-        object.put(value1[0],value1[1]);
-        row.select("li").forEach(element -> {
-           element.select("span").forEach(elem->{
-               str.add(elem.text());
-           });
-        });
-
-        Map<String,Integer> map = null ;
-
-        IntStream.range(0,str.size()).forEach(elem->{
-            if(elem % 2 ==0){
-               object.put(str.get(elem+1).contains(" ")?str.get(elem+1).replaceAll(" ","_"):str.get(elem+1),str.get(elem));
-            }
-        });
-NepalInformation nepalInformation = new NepalInformation();
-nepalInformation.setTotal_Samples_Tested(object.getInt("Total_Samples_Tested"));
-nepalInformation.setIsolation(object.getInt("Isolation"));
-nepalInformation.setNegative(object.getInt("Negative"));
-nepalInformation.setRecovered(object.getInt("Recovered"));
-nepalInformation.setPositive(object.getInt("Positive"));
-
-        ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(nepalInformation);
-        mObject.deleteMongoCollectionData(NEPAL_DATA);
-        String documentId = mObject.saveMongoDocument(new JSONObject(json),NEPAL_DATA);
-        return object;
-    }
-
-    public JSONArray getJSONDataforProvince(){
-        JSONArray array = mObject.find(PROVINCE_WISE_STATS);
-        return array;
-    }
 
     @Scheduled(fixedRate = 7200000)
     private void getJSONDataForProvince() throws Exception {
-        LocalDate myObj = LocalDate.now();
-        WebClient client = clientConfig.NepalWebclient1();
-        WebClient.RequestBodySpec uri1 = client
-                .method(HttpMethod.GET);
-        String response2 = uri1.exchange()
-
-                .block()
-                .bodyToMono(String.class)
-                .block();
+        String response2 = null;
+        response2 = getDataabc();
         JSONArray array = new JSONArray(response2);
         mObject.deleteMongoCollectionData(PROVINCE_WISE_STATS);
         Map<String,Integer> provinceMap = new HashMap<>();
@@ -226,22 +123,154 @@ province.forEach((k,v)->{
     LOGGER.info("Data stored for province wise data for province {} with documentId {}",k);
 
 });
+//
+//    }
+
 
     }
-    @Scheduled(cron =  "0 58 23 * * *",zone = "UTC")
-    private void getJSONDataForProvinceCron() throws Exception {
-        WebClient client = clientConfig.NepalWebclient();
-        WebClient.RequestBodySpec uri1 = client
-                .method(HttpMethod.GET)
-                .uri("/stats/?format=json&id=&province=all");
-        String response2 = uri1.exchange()
-                .block()
-                .bodyToMono(String.class)
-                .block();
-        JSONArray array = new JSONArray(response2);
-        for(Object object:array) {
-            String documentId = mObject.saveMongoDocument(new JSONObject(object),PROVINCE_WISE_STATS_CRON);
-        }
-        }
 
+    public String badCode(int x) {
+        String y = null;
+        if (x > 0) {
+            y = "more";
+        }
+        else if (x < 0) {
+            y = "less";
+        }
+        return y.toUpperCase();
+    }
+
+
+
+
+    private String getDataabc() {
+        return "{\n" +
+                "  \"resultsPerPage\": 1,\n" +
+                "  \"startIndex\": 0,\n" +
+                "  \"totalResults\": 1,\n" +
+                "  \"format\": \"NVD_CVE\",\n" +
+                "  \"version\": \"2.0\",\n" +
+                "  \"timestamp\": \"2022-11-02T01:30:25.893\",\n" +
+                "  \"vulnerabilities\": [\n" +
+                "    {\n" +
+                "      \"cve\": {\n" +
+                "        \"id\": \"CVE-2019-1010218\",\n" +
+                "        \"sourceIdentifier\": \"josh@bress.net\",\n" +
+                "        \"published\": \"2019-07-22T18:15:10.917\",\n" +
+                "        \"lastModified\": \"2020-09-30T13:40:18.163\",\n" +
+                "        \"vulnStatus\": \"Analyzed\",\n" +
+                "        \"descriptions\": [\n" +
+                "          {\n" +
+                "            \"lang\": \"en\",\n" +
+                "            \"value\": \"Cherokee Webserver Latest Cherokee Web server Upto Version 1.2.103 (Current stable) is affected by: Buffer Overflow - CWE-120. The impact is: Crash. The component is: Main cherokee command. The attack vector is: Overwrite argv[0] to an insane length with execl. The fixed version is: There's no fix yet.\"\n" +
+                "          },\n" +
+                "          {\n" +
+                "            \"lang\": \"es\",\n" +
+                "            \"value\": \"El servidor web de Cherokee más reciente de Cherokee Webserver Hasta Versión 1.2.103 (estable actual) está afectado por: Desbordamiento de Búfer - CWE-120. El impacto es: Bloqueo. El componente es: Comando cherokee principal. El vector de ataque es: Sobrescribir argv[0] en una longitud no sana con execl. La versión corregida es: no hay ninguna solución aún.\"\n" +
+                "          }\n" +
+                "        ],\n" +
+                "        \"metrics\": {\n" +
+                "          \"cvssMetricV31\": [\n" +
+                "            {\n" +
+                "              \"source\": \"nvd@nist.gov\",\n" +
+                "              \"type\": \"Primary\",\n" +
+                "              \"cvssData\": {\n" +
+                "                \"version\": \"3.1\",\n" +
+                "                \"vectorString\": \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H\",\n" +
+                "                \"attackVector\": \"NETWORK\",\n" +
+                "                \"attackComplexity\": \"LOW\",\n" +
+                "                \"privilegesRequired\": \"NONE\",\n" +
+                "                \"userInteraction\": \"NONE\",\n" +
+                "                \"scope\": \"UNCHANGED\",\n" +
+                "                \"confidentialityImpact\": \"NONE\",\n" +
+                "                \"integrityImpact\": \"NONE\",\n" +
+                "                \"availabilityImpact\": \"HIGH\",\n" +
+                "                \"baseScore\": 7.5,\n" +
+                "                \"baseSeverity\": \"HIGH\"\n" +
+                "              },\n" +
+                "              \"exploitabilityScore\": 3.9,\n" +
+                "              \"impactScore\": 3.6\n" +
+                "            }\n" +
+                "          ],\n" +
+                "          \"cvssMetricV2\": [\n" +
+                "            {\n" +
+                "              \"source\": \"nvd@nist.gov\",\n" +
+                "              \"type\": \"Primary\",\n" +
+                "              \"cvssData\": {\n" +
+                "                \"version\": \"2.0\",\n" +
+                "                \"vectorString\": \"AV:N/AC:L/Au:N/C:N/I:N/A:P\",\n" +
+                "                \"accessVector\": \"NETWORK\",\n" +
+                "                \"accessComplexity\": \"LOW\",\n" +
+                "                \"authentication\": \"NONE\",\n" +
+                "                \"confidentialityImpact\": \"NONE\",\n" +
+                "                \"integrityImpact\": \"NONE\",\n" +
+                "                \"availabilityImpact\": \"PARTIAL\",\n" +
+                "                \"baseScore\": 5.0,\n" +
+                "                \"baseSeverity\": \"MEDIUM\"\n" +
+                "              },\n" +
+                "              \"exploitabilityScore\": 10.0,\n" +
+                "              \"impactScore\": 2.9,\n" +
+                "              \"acInsufInfo\": false,\n" +
+                "              \"obtainAllPrivilege\": false,\n" +
+                "              \"obtainUserPrivilege\": false,\n" +
+                "              \"obtainOtherPrivilege\": false,\n" +
+                "              \"userInteractionRequired\": false\n" +
+                "            }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        \"weaknesses\": [\n" +
+                "          {\n" +
+                "            \"source\": \"nvd@nist.gov\",\n" +
+                "            \"type\": \"Primary\",\n" +
+                "            \"description\": [\n" +
+                "              {\n" +
+                "                \"lang\": \"en\",\n" +
+                "                \"value\": \"CWE-787\"\n" +
+                "              }\n" +
+                "            ]\n" +
+                "          },\n" +
+                "          {\n" +
+                "            \"source\": \"josh@bress.net\",\n" +
+                "            \"type\": \"Secondary\",\n" +
+                "            \"description\": [\n" +
+                "              {\n" +
+                "                \"lang\": \"en\",\n" +
+                "                \"value\": \"CWE-120\"\n" +
+                "              }\n" +
+                "            ]\n" +
+                "          }\n" +
+                "        ],\n" +
+                "        \"configurations\": [\n" +
+                "          {\n" +
+                "            \"nodes\": [\n" +
+                "              {\n" +
+                "                \"operator\": \"OR\",\n" +
+                "                \"negate\": false,\n" +
+                "                \"cpeMatch\": [\n" +
+                "                  {\n" +
+                "                    \"vulnerable\": true,\n" +
+                "                    \"criteria\": \"cpe:2.3:a:cherokee-project:cherokee_web_server:*:*:*:*:*:*:*:*\",\n" +
+                "                    \"versionEndIncluding\": \"1.2.103\",\n" +
+                "                    \"matchCriteriaId\": \"DCE1E311-F9E5-4752-9F51-D5DA78B7BBFA\"\n" +
+                "                  }\n" +
+                "                ]\n" +
+                "              }\n" +
+                "            ]\n" +
+                "          }\n" +
+                "        ],\n" +
+                "        \"references\": [\n" +
+                "          {\n" +
+                "            \"url\": \"https://i.imgur.com/PWCCyir.png\",\n" +
+                "            \"source\": \"josh@bress.net\",\n" +
+                "            \"tags\": [\n" +
+                "              \"Exploit\",\n" +
+                "              \"Third Party Advisory\"\n" +
+                "            ]\n" +
+                "          }\n" +
+                "        ]\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+    }
     }
