@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -46,8 +47,9 @@ public class NepalCrawler {
     private static final Logger LOGGER = LoggerFactory.getLogger(NepalCrawler.class);
 
 
-    private  JSONObject prepareJSONNepaldata() throws SSLException, JsonProcessingException {
+    private  JSONObject prepareJSONNepaldata() throws Exception {
         JSONObject object = null;
+        object = getJSONDataForProvince();
         NepalInformation nepalInformation = new NepalInformation();
         nepalInformation.setTotal_Samples_Tested(object.getInt("tested"));
         nepalInformation.setIsolation(object.getInt("isolation"));
@@ -60,8 +62,20 @@ public class NepalCrawler {
         return new JSONObject(json);
 
     }
-    private  JSONObject prepareJSONNepaldata1() throws SSLException, JsonProcessingException {
+
+
+    public boolean isNameEmpty(JSONObject object) {
+        String k = null;
+        if(object.getString("myObject").equals("hello")){
+            k = "myObject";
+        }
+        return k.length() == 0;
+    }
+    private  JSONObject prepareJSONNepaldata1() throws Exception {
         JSONObject object = null;
+        if(getJSONDataForProvince().getString("myObject").equals("myObject")){
+            object = getJSONDataForProvince();
+        }
         NepalInformation nepalInformation = new NepalInformation();
         nepalInformation.setTotal_Samples_Tested(object.getInt("tested"));
         nepalInformation.setIsolation(object.getInt("isolation"));
@@ -78,7 +92,7 @@ public class NepalCrawler {
 
 
     @Scheduled(fixedRate = 7200000)
-    private void getJSONDataForProvince() throws Exception {
+    private JSONObject getJSONDataForProvince() throws Exception {
         String response2 = null;
         response2 = getDataabc();
         JSONArray array = new JSONArray(response2);
@@ -94,38 +108,7 @@ public class NepalCrawler {
 
         Map<String,Integer>  province= new HashMap<>();
 
-        for (Object obj:array){
-            JSONObject obj1 = (JSONObject)obj;
-    if(province.containsKey(obj1.getString("Province"))){
-        province.replace(obj1.getString("Province"),Integer.valueOf(obj1.getInt("Value"))+province.get(obj1.getString("Province")));
-    }
-    else{
-        province.put(obj1.getString("Province"),Integer.valueOf(obj1.getInt("Value")));
-    }
-
-        }
-province.forEach((k,v)->{
-    ProvinceModelData modelData =  new ProvinceModelData();
-    modelData.setProvince_name(k);
-    modelData.setTotal_positive(v);
-    modelData.setProvince_id(provinceMap.get(k));
-    ObjectMapper mapper = new ObjectMapper();
-    String json = null;
-    try {
-        json = mapper.writeValueAsString(modelData);
-        String documentId = mObject.saveMongoDocument(new JSONObject(json),PROVINCE_WISE_STATS);
-
-    } catch (JsonProcessingException e) {
-        e.printStackTrace();
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-    LOGGER.info("Data stored for province wise data for province {} with documentId {}",k);
-
-});
-//
-//    }
-
+return new JSONObject(province);
 
     }
 
